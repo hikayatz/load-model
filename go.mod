@@ -1,3 +1,3 @@
-module github.com/zayinul/load-model
+module github.com/hikayatz/load-model
 
 go 1.15

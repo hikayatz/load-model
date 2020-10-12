@@ -3,8 +3,9 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	. "github.com/zayinul/load-model/helpers"
+	. "github.com/hikayatz/load-model/helpers"
 	"net/http"
+	"time"
 )
 
 type Person struct {
@@ -12,6 +13,9 @@ type Person struct {
 	Address string `json:"address"`
 	Phone   string `json:"phone"`
 	Age     int64  `json:"age"`
+	IsMarried bool `json:"is_married"`
+	Weight float64 `json:"weight"`
+	BirthDay time.Time `json:"birth_day" formatDate:"02-01-2006"`
 }
 
 // sample code
@@ -31,6 +35,7 @@ func handlePostPerson(writer http.ResponseWriter, request *http.Request) {
 	}
 	var person = &Person{}
 	err := LoadModel(person, request, "json")
+
 	if err != nil {
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
 		return
