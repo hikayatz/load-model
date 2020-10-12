@@ -11,17 +11,18 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"time"
 )
 
 const (
-	defaultMemory = 54 << 20 // 54 MB
-
+	defaultMemory       = 54 << 20 // 54 MB
 	HeaderContentType   = "Content-Type"
 	MIMEApplicationJSON = "application/json"
 	MIMEApplicationXML  = "application/xml"
 	MIMETextXML         = "text/xml"
 	MIMEApplicationForm = "application/x-www-form-urlencoded"
 	MIMEMultipartForm   = "multipart/form-data"
+	formateDateISO      = "2006-01-02 15:04:05"
 )
 
 func LoadModel(model interface{}, req *http.Request, tag string) (err error) {
@@ -79,23 +80,24 @@ func LoadModel(model interface{}, req *http.Request, tag string) (err error) {
 			inputFieldName = typeField.Name
 		}
 		var val = ""
-		if dataRequest != nil{
+		if dataRequest != nil {
 			inputValue, exists := dataRequest[inputFieldName]
 			if !exists {
 				continue
 			}
 			val = inputValue[0]
-		}else if jsonMap != nil {
+		} else if jsonMap != nil {
 			inputValue, exists := jsonMap[inputFieldName]
 			if !exists {
 				continue
 			}
 			val = fmt.Sprintf("%v", inputValue)
-		}else{
+		} else {
 			return
 		}
 
-
+		var timeKind = reflect.TypeOf(time.Time{}).Kind()
+		// convert any type from struct
 		switch structFieldKind {
 		case reflect.Int:
 			err = setIntField(val, 0, structField)
@@ -125,8 +127,8 @@ func LoadModel(model interface{}, req *http.Request, tag string) (err error) {
 			err = setFloatField(val, 64, structField)
 		case reflect.String:
 			structField.SetString(val)
-
-
+		case timeKind:
+			_ = setTimeField(val, structField, typeField)
 		default:
 			//_ = errors.New("unknown type")
 		}
@@ -191,3 +193,17 @@ func setFloatField(value string, bitSize int, field reflect.Value) error {
 	return err
 }
 
+func setTimeField(value string, field reflect.Value, typeField reflect.StructField) error {
+	if value == "" {
+		return nil
+	}
+	var formatDate = formateDateISO
+	if tag:=string(typeField.Tag.Get("formatDate")); tag != ""{
+		formatDate = tag
+	}
+	timeVal, err := time.Parse(formatDate, value)
+	if err == nil {
+		field.Set(reflect.ValueOf(timeVal))
+	}
+	return err
+}
